@@ -17,13 +17,20 @@ import api from "../api/axiosInstance";
 import { useAuth } from "../auth/AuthContext";
 import Toast from "react-native-toast-message";
 import { useNavigation } from "@react-navigation/native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
 const LoginScreen = () => {
-  const { control, handleSubmit, formState: { errors } } = useForm();
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm();
   const { login } = useAuth();
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -36,7 +43,6 @@ const LoginScreen = () => {
       if (token && user) {
         await login(token, user);
         Toast.show({ type: "success", text1: "Đăng nhập thành công" });
-        await login(token, user);
       } else {
         Toast.show({ type: "error", text1: "Phản hồi không hợp lệ từ server" });
       }
@@ -56,23 +62,23 @@ const LoginScreen = () => {
         >
           <ImageBackground
             source={{
-              uri:
-                "https://res.cloudinary.com/dwonhfsfj/image/upload/v1761622132/BG_web_jljyeh.png",
+              uri: "https://res.cloudinary.com/dwonhfsfj/image/upload/v1761622132/BG_web_jljyeh.png",
             }}
             style={styles.bg}
             resizeMode="cover"
             imageStyle={styles.bgImage}
           >
             <LinearGradient
-              colors={[
-                "rgba(0,0,0,0.6)",
-                "rgba(0,0,0,0.5)",
-                "rgba(0,0,0,0.7)",
-              ]}
+              colors={["rgba(0,0,0,0.6)", "rgba(0,0,0,0.5)", "rgba(0,0,0,0.7)"]}
               style={StyleSheet.absoluteFillObject}
             />
 
-            <View style={[styles.formBox, { paddingTop: Math.max(16, insets.top + 8) }]}>
+            <View
+              style={[
+                styles.formBox,
+                { paddingTop: Math.max(16, insets.top + 8) },
+              ]}
+            >
               <Text style={styles.title}>Đăng Nhập</Text>
 
               {/* Email */}
