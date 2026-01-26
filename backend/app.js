@@ -13,6 +13,16 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// HEALTH CHECK
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    status: "ok",
+    message: "Server is running 🚀",
+    time: new Date().toISOString(),
+  });
+});
+
+
 app.use("/api/auth", authRoutes);
 app.use("/api/cards", cardRoutes);
 app.use("/api/users", userCardRoutes);
