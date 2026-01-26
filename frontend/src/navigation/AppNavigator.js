@@ -1,6 +1,6 @@
 // src/navigation/AppNavigator.js
 import React from "react";
-import { View, ActivityIndicator } from "react-native";
+import { View, ActivityIndicator, Platform } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -14,28 +14,70 @@ import CardDetailScreen from "../screens/CardDetailScreen";
 import WelcomeScreen from "../screens/WelcomeScreen";
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
-
-// NOTE: dùng đúng tên file màn bạn tạo
-import AddByCodeScreen from "../screens/AddByCodeScreen"; // màn nhập mã (Add by code)
-import QRScannerAddScreen from "../screens/QRScannerAddScreen"; // màn quét QR
+import AddByCodeScreen from "../screens/AddByCodeScreen";
+import QRScannerAddScreen from "../screens/QRScannerAddScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Tab chính
+/* =======================
+   🔗 Linking cho WEB
+======================= */
+const linking = {
+  prefixes: ["/"],
+  config: {
+    screens: {
+      Welcome: "",
+      Login: "login",
+      Register: "register",
+      MainTabs: {
+        screens: {
+          Home: "home",
+          MyCollection: "collection",
+          Profile: "profile",
+          Admin: "admin",
+        },
+      },
+      AddByCode: "add-by-code",
+      QRScannerAdd: "scan-qr",
+      CardDetail: "card/:id",
+    },
+  },
+};
+
+/* =======================
+   Tabs chính
+======================= */
 const MainTabs = () => {
   const { user } = useAuth();
 
   return (
-    <Tab.Navigator>
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarLabelStyle: { fontSize: 12 },
+        ...(Platform.OS === "web"
+          ? { tabBarStyle: { height: 60 } }
+          : {}),
+      }}
+    >
       <Tab.Screen name="Home" component={HomeScreenMain} />
-      <Tab.Screen name="MyCollection" component={MyCollectionScreen} options={{ title: "My Collection" }} />
+      <Tab.Screen
+        name="MyCollection"
+        component={MyCollectionScreen}
+        options={{ title: "My Collection" }}
+      />
       <Tab.Screen name="Profile" component={ProfileScreen} />
-      {user?.role === "admin" && <Tab.Screen name="Admin" component={AdminScreen} />}
+      {user?.role === "admin" && (
+        <Tab.Screen name="Admin" component={AdminScreen} />
+      )}
     </Tab.Navigator>
   );
 };
 
+/* =======================
+   App Navigator
+======================= */
 const AppNavigator = () => {
   const { user, loading } = useAuth();
 
@@ -48,7 +90,14 @@ const AppNavigator = () => {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer
+      linking={Platform.OS === "web" ? linking : undefined}
+      fallback={
+        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+          <ActivityIndicator />
+        </View>
+      }
+    >
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!user ? (
           <>
@@ -58,17 +107,12 @@ const AppNavigator = () => {
           </>
         ) : (
           <>
-            {/* MainTabs là tab navigator chính */}
             <Stack.Screen name="MainTabs" component={MainTabs} />
-
-            {/* Màn nhập mã (Add by code). Gọi bằng navigation.navigate("AddByCode") */}
             <Stack.Screen
               name="AddByCode"
               component={AddByCodeScreen}
               options={{ headerShown: true, title: "Thêm thẻ bằng mã" }}
             />
-
-            {/* Màn quét QR. Gọi bằng navigation.navigate("QRScannerAdd") */}
             <Stack.Screen
               name="QRScannerAdd"
               component={QRScannerAddScreen}
@@ -77,7 +121,6 @@ const AppNavigator = () => {
           </>
         )}
 
-        {/* CardDetail có thể mở từ bất kỳ tab nào */}
         <Stack.Screen
           name="CardDetail"
           component={CardDetailScreen}
