@@ -1,4 +1,4 @@
-import OTP from "../models/otpVerify.js";
+import OTP from "../models/OtpVerify.js";
 import User from "../models/User.js";
 import { generateAndSendOTP } from "../helpers/otpHelper.js";
 
