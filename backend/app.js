@@ -10,8 +10,34 @@ import otpRoutes from "./routes/otp.js";
 
 const app = express();
 
-app.use(cors());
+/* ================== CORS ================== */
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:8081",
+  "https://card-collection-app-tawny.vercel.app",
+  "https://card-collection-app-wb6x-hrpt4jyku-qthai25s-projects.vercel.app"
+];
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true); // Postman / server-to-server
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("CORS not allowed"));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+
+// ⚠️ BẮT BUỘC cho preflight
+app.options("*", cors());
+
 app.use(express.json());
+/* ========================================== */
 
 // HEALTH CHECK
 app.get("/api/health", (req, res) => {
@@ -21,7 +47,6 @@ app.get("/api/health", (req, res) => {
     time: new Date().toISOString(),
   });
 });
-
 
 app.use("/api/auth", authRoutes);
 app.use("/api/cards", cardRoutes);
