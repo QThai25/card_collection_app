@@ -21,10 +21,21 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      if (!origin) return callback(null, true); // Postman / server-to-server
-      if (allowedOrigins.includes(origin)) {
+      if (!origin) return callback(null, true);
+
+      // Local
+      if (
+        origin === "http://localhost:3000" ||
+        origin === "http://localhost:8081"
+      ) {
         return callback(null, true);
       }
+
+      // ✅ ALL Vercel preview & production
+      if (origin.endsWith(".vercel.app")) {
+        return callback(null, true);
+      }
+
       return callback(new Error("CORS not allowed"));
     },
     credentials: true,
@@ -32,6 +43,7 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 
 // ⚠️ BẮT BUỘC cho preflight
 app.options("*", cors());
