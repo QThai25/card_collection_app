@@ -1,24 +1,53 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { Stack , useRouter, useSegments } from "expo-router";
+import { AuthProvider, useAuth } from "../src/auth/AuthContext";
+import { useEffect } from "react";
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { ActivityIndicator, View } from "react-native";
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+function AuthGate({ children }) {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (loading) return; // Still loading, don't redirect yet
+
+    const inAuthGroup = segments[0] === "(auth)";
+
+    if (user) {
+      // User is logged in, redirect to tabs if in auth group
+      if (inAuthGroup) {
+        router.replace("/(tabs)");
+      }
+    } else {
+      // User is not logged in, redirect to welcome if not in auth group
+      if (!inAuthGroup) {
+        router.replace("/(auth)/welcome");
+      }
+    }
+  }, [user, loading, segments, router]);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  return children;
+}
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <AuthProvider>
+      <AuthGate>
+        <Stack 
+          screenOptions={{ 
+            headerShown: false,
+          }} 
+        />
+      </AuthGate>
+    </AuthProvider>
   );
 }

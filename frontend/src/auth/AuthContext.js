@@ -1,5 +1,5 @@
 // src/auth/AuthContext.js
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, { createContext, useState, useEffect, useContext, useRef } from "react";
 import { getItem, setItem, removeItem } from "../utils/storage";
 import api from "../api/axiosInstance";
 
@@ -9,6 +9,37 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  
+  // Ref để tránh closure issue trong interceptor
+  const logoutRef = useRef(null);
+
+  const logout = async () => {
+    try {
+      await removeItem("token");
+      await removeItem("user");
+    } catch (e) {
+      console.warn("logout clear storage failed:", e);
+    } finally {
+      setToken(null);
+      setUser(null);
+      delete api.defaults.headers.common["Authorization"];
+    }
+  };
+
+  // Update ref khi logout thay đổi
+  useEffect(() => {
+    logoutRef.current = logout;
+  }, []);
+
+  // Diagnostic log: when provider mounts/updates
+  useEffect(() => {
+    try {
+       
+      console.log('🔐 AuthProvider state:', { user, token, loading });
+    } catch (_e) {
+      // ignore
+    }
+  }, [user, token, loading]);
 
   useEffect(() => {
     // load stored token + user on startup
@@ -38,7 +69,7 @@ export const AuthProvider = ({ children }) => {
       (err) => {
         if (err?.response?.status === 401) {
           console.warn("API 401 -> auto logout");
-          logout();
+          logoutRef.current?.();
         }
         return Promise.reject(err);
       }
@@ -56,19 +87,6 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.error("login error:", e);
       throw e;
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await removeItem("token");
-      await removeItem("user");
-    } catch (e) {
-      console.warn("logout clear storage failed:", e);
-    } finally {
-      setToken(null);
-      setUser(null);
-      delete api.defaults.headers.common["Authorization"];
     }
   };
 

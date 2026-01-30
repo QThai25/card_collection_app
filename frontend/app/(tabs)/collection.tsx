@@ -11,13 +11,13 @@ import {
   StyleSheet,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
-import api from "../api/axiosInstance";
-import CardItem from "../components/CardItem";
-import { useAuth } from "../auth/AuthContext";
+import api from "../../src/api/axiosInstance";
+import CardItem from "../../src/components/CardItem";
+import { useAuth } from "../../src/auth/AuthContext";
 import Toast from "react-native-toast-message";
 import { Ionicons } from "@expo/vector-icons";
 
-const MyCollectionScreen = () => {
+export default function CollectionTab() {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -61,7 +61,7 @@ const MyCollectionScreen = () => {
           Bạn cần đăng nhập để xem bộ sưu tập của mình
         </Text>
         <TouchableOpacity
-          onPress={() => router.push("/login")}
+          onPress={() => router.push("/(auth)/login")}
           style={styles.loginButton}
         >
           <Text style={styles.loginButtonText}>Đến trang Đăng nhập</Text>
@@ -76,18 +76,19 @@ const MyCollectionScreen = () => {
     mockTotal > 0 ? Math.round((totalOwned / mockTotal) * 1000) / 10 : 0;
 
   const rarityCounts = cards.reduce(
-    (acc, c) => {
-      const r = (c.rarity || "common").toLowerCase();
+    (acc: any, c: any) => {
+      const r = (c?.rarity || "common").toLowerCase();
       acc[r] = (acc[r] || 0) + 1;
       return acc;
     },
     { legendary: 0, epic: 0, rare: 0, common: 0 }
   );
 
-  const renderCard = ({ item }) => (
+  const renderCard = ({ item }: { item: any }) => (
     <CardItem
       card={item}
       onPress={() => router.push(`/card/${item._id}`)}
+      onAdd={() => {}}
     />
   );
 
@@ -102,13 +103,11 @@ const MyCollectionScreen = () => {
       resizeMode="cover"
     >
       <SafeAreaView style={styles.safe}>
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Bộ sưu tập của tôi</Text>
           <Text style={styles.headerSub}>Quản lý các thẻ bạn đã sưu tầm</Text>
         </View>
 
-        {/* FlatList với header + cards */}
         <FlatList
           data={cards}
           keyExtractor={(item) =>
@@ -124,7 +123,6 @@ const MyCollectionScreen = () => {
           contentContainerStyle={{ paddingBottom: 140, paddingTop: 10 }}
           ListHeaderComponent={
             <>
-              {/* Stats Box */}
               <View style={styles.statsWrap}>
                 <View style={styles.statCard}>
                   <Text style={styles.statLabel}>Tổng thẻ đã sưu tầm</Text>
@@ -147,7 +145,6 @@ const MyCollectionScreen = () => {
                 </View>
               </View>
 
-              {/* Rarity breakdown */}
               <View style={styles.rarityWrap}>
                 <View style={styles.rarityCard}>
                   <Text style={styles.rarityNumber}>{rarityCounts.legendary}</Text>
@@ -187,13 +184,8 @@ const MyCollectionScreen = () => {
           }
         />
 
-        {/* Add Button */}
         <TouchableOpacity
-          onPress={() => {
-            const parent = navigation.getParent();
-            if (parent) parent.navigate("AddByCode");
-            else navigation.navigate("AddByCode");
-          }}
+          onPress={() => router.push("/add-by-code")}
           style={styles.addButton}
         >
           <Ionicons name="add" size={30} color="white" />
@@ -201,7 +193,7 @@ const MyCollectionScreen = () => {
       </SafeAreaView>
     </ImageBackground>
   );
-};
+}
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: "transparent" },
@@ -213,7 +205,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 20, fontWeight: "800", color: "#fff" },
   headerSub: { color: "#e0e0e0", marginTop: 4 },
-
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   loginPrompt: { fontSize: 16, marginBottom: 20 },
   loginButton: {
@@ -223,10 +214,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   loginButtonText: { color: "#fff", fontWeight: "bold" },
-
   statsWrap: {
     padding: 12,
-    backgroundColor: "rgba(255,255,255,0.3)", // mờ, BG rõ
+    backgroundColor: "rgba(255,255,255,0.3)",
     margin: 12,
     borderRadius: 12,
     elevation: 3,
@@ -234,7 +224,6 @@ const styles = StyleSheet.create({
   statCard: { marginBottom: 12 },
   statLabel: { color: "#6b7280", fontSize: 13 },
   statValue: { fontSize: 22, fontWeight: "800", marginTop: 4 },
-
   progressBg: {
     height: 10,
     backgroundColor: "rgba(230,238,248,0.6)",
@@ -244,11 +233,15 @@ const styles = StyleSheet.create({
   },
   progressFill: { height: "100%", backgroundColor: "#06b6d4" },
   progressText: { marginTop: 6, color: "#6b7280", fontSize: 12 },
-
-  rarityWrap: { flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 12, marginTop: 6 },
+  rarityWrap: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    marginTop: 6,
+  },
   rarityCard: {
     flex: 1,
-    backgroundColor: "rgba(255,255,255,0.3)", // mờ, BG rõ
+    backgroundColor: "rgba(255,255,255,0.3)",
     margin: 6,
     borderRadius: 12,
     padding: 12,
@@ -257,13 +250,10 @@ const styles = StyleSheet.create({
   },
   rarityNumber: { fontSize: 20, fontWeight: "800", color: "#b45309" },
   rarityLabel: { color: "#6b7280", marginTop: 6 },
-
   sectionHeader: { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 6 },
   sectionTitle: { fontSize: 18, fontWeight: "700", color: "#fff" },
-
   emptyWrap: { padding: 24, alignItems: "center" },
   emptyText: { color: "#e0e0e0" },
-
   addButton: {
     position: "absolute",
     bottom: 25,
@@ -276,8 +266,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     elevation: 6,
   },
-
   bg: { flex: 1, width: "100%", height: "100%" },
 });
-
-export default MyCollectionScreen;

@@ -1,6 +1,19 @@
-// app/index.tsx
-import WelcomeScreen from "../src/screens/WelcomeScreen";
+import { Redirect } from 'expo-router';
+import { useAuth } from '../src/auth/AuthContext';
+import { View, ActivityIndicator } from 'react-native';
 
 export default function Index() {
-  return <WelcomeScreen />;
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  return user
+    ? <Redirect href="/(tabs)" />
+    : <Redirect href="/welcome" />;
 }

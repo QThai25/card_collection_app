@@ -16,14 +16,14 @@ import { useForm, Controller } from "react-hook-form";
 import api from "../api/axiosInstance";
 import { useAuth } from "../auth/AuthContext";
 import Toast from "react-native-toast-message";
-import { useNavigation } from "@react-navigation/native";
+import { useRouter } from "expo-router";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
+const { height: SCREEN_H } = Dimensions.get("window");
 
 const LoginScreen = () => {
   const {
@@ -31,8 +31,9 @@ const LoginScreen = () => {
     handleSubmit,
     formState: { errors },
   } = useForm();
+
   const { login } = useAuth();
-  const navigation = useNavigation();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const onSubmit = async (data) => {
@@ -40,25 +41,36 @@ const LoginScreen = () => {
       const res = await api.post("/auth/login", data);
       const token = res?.data?.token;
       const user = res?.data?.user;
+
       if (token && user) {
         await login(token, user);
-        Toast.show({ type: "success", text1: "Đăng nhập thành công" });
+        Toast.show({
+          type: "success",
+          text1: "Đăng nhập thành công",
+        });
+        router.replace("/home");
       } else {
-        Toast.show({ type: "error", text1: "Phản hồi không hợp lệ từ server" });
+        Toast.show({
+          type: "error",
+          text1: "Phản hồi không hợp lệ từ server",
+        });
       }
     } catch (err) {
-      const serverMessage =
+      const message =
         err?.response?.data?.message || err.message || "Không xác định";
-      Toast.show({ type: "error", text1: "Lỗi đăng nhập: " + serverMessage });
+      Toast.show({
+        type: "error",
+        text1: "Lỗi đăng nhập",
+        text2: message,
+      });
     }
   };
 
   return (
     <SafeAreaView style={[styles.safe, { paddingTop: insets.top }]}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
           style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
         >
           <ImageBackground
             source={{
@@ -66,19 +78,14 @@ const LoginScreen = () => {
             }}
             style={styles.bg}
             resizeMode="cover"
-            imageStyle={styles.bgImage}
           >
             <LinearGradient
+              pointerEvents="none"
               colors={["rgba(0,0,0,0.6)", "rgba(0,0,0,0.5)", "rgba(0,0,0,0.7)"]}
               style={StyleSheet.absoluteFillObject}
             />
 
-            <View
-              style={[
-                styles.formBox,
-                { paddingTop: Math.max(16, insets.top + 8) },
-              ]}
-            >
+            <View style={styles.formBox}>
               <Text style={styles.title}>Đăng Nhập</Text>
 
               {/* Email */}
@@ -86,7 +93,7 @@ const LoginScreen = () => {
                 control={control}
                 name="email"
                 rules={{
-                  required: { value: true, message: "Email là bắt buộc" },
+                  required: "Email là bắt buộc",
                   pattern: {
                     value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                     message: "Email không hợp lệ",
@@ -94,24 +101,18 @@ const LoginScreen = () => {
                 }}
                 render={({ field: { onChange, value } }) => (
                   <TextInput
-                    label=""
                     placeholder="Email"
-                    placeholderTextColor="#ffb6c1"
-                    accessibilityLabel="email-input"
                     mode="outlined"
                     value={value}
                     onChangeText={onChange}
                     textColor="#fff"
+                    placeholderTextColor="#ffb6c1"
                     outlineColor="#e91e63"
                     activeOutlineColor="#e91e63"
-                    dense
                     style={styles.input}
                     theme={{
                       roundness: 12,
                       colors: {
-                        text: "#fff",
-                        primary: "#e91e63",
-                        placeholder: "#ffb6c1",
                         background: "transparent",
                       },
                     }}
@@ -119,9 +120,7 @@ const LoginScreen = () => {
                 )}
               />
               {errors.email && (
-                <Text style={styles.errorText}>
-                  {errors.email.message || "Email là bắt buộc"}
-                </Text>
+                <Text style={styles.errorText}>{errors.email.message}</Text>
               )}
 
               {/* Password */}
@@ -129,7 +128,7 @@ const LoginScreen = () => {
                 control={control}
                 name="password"
                 rules={{
-                  required: { value: true, message: "Mật khẩu là bắt buộc" },
+                  required: "Mật khẩu là bắt buộc",
                   minLength: {
                     value: 6,
                     message: "Mật khẩu tối thiểu 6 ký tự",
@@ -137,25 +136,19 @@ const LoginScreen = () => {
                 }}
                 render={({ field: { onChange, value } }) => (
                   <TextInput
-                    label=""
                     placeholder="Mật khẩu"
-                    placeholderTextColor="#ffb6c1"
-                    accessibilityLabel="password-input"
                     mode="outlined"
+                    secureTextEntry
                     value={value}
                     onChangeText={onChange}
-                    secureTextEntry
                     textColor="#fff"
+                    placeholderTextColor="#ffb6c1"
                     outlineColor="#e91e63"
                     activeOutlineColor="#e91e63"
-                    dense
                     style={styles.input}
                     theme={{
                       roundness: 12,
                       colors: {
-                        text: "#fff",
-                        primary: "#e91e63",
-                        placeholder: "#ffb6c1",
                         background: "transparent",
                       },
                     }}
@@ -167,10 +160,8 @@ const LoginScreen = () => {
               )}
 
               <Button
-                accessibilityRole="button"
                 mode="contained"
                 buttonColor="#e91e63"
-                textColor="#fff"
                 onPress={handleSubmit(onSubmit)}
                 style={styles.loginBtn}
                 contentStyle={{ height: 50 }}
@@ -178,21 +169,22 @@ const LoginScreen = () => {
                 Đăng Nhập
               </Button>
 
-              <TouchableOpacity onPress={() => navigation.navigate("Register")}>
+              <TouchableOpacity onPress={() => router.push("/register")}>
                 <Text style={styles.registerText}>
                   Chưa có tài khoản?{" "}
-                  <Text style={{ color: "#e91e63", fontWeight: "700" }}>
-                    Đăng ký ngay
-                  </Text>
+                  <Text style={styles.registerLink}>Đăng ký ngay</Text>
                 </Text>
               </TouchableOpacity>
             </View>
           </ImageBackground>
         </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 };
+
+export default LoginScreen;
+
+/* ================= STYLES ================= */
 
 const styles = StyleSheet.create({
   safe: {
@@ -204,21 +196,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  bgImage: {
-    width: SCREEN_W,
-    height: SCREEN_H,
-  },
   formBox: {
     width: "85%",
     backgroundColor: "rgba(0,0,0,0.55)",
     borderRadius: 16,
     paddingHorizontal: 20,
-    paddingBottom: 24,
-    alignSelf: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
+    paddingVertical: 24,
   },
   title: {
     color: "#fff",
@@ -245,8 +228,9 @@ const styles = StyleSheet.create({
     color: "#fff",
     textAlign: "center",
     fontSize: 15,
-    marginBottom: 8,
+  },
+  registerLink: {
+    color: "#e91e63",
+    fontWeight: "700",
   },
 });
-
-export default LoginScreen;

@@ -11,15 +11,13 @@ import {
 import { Button } from "react-native-paper";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import { useAuth } from "../auth/AuthContext";
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 
-const WelcomeScreen = () => {
+export default function WelcomeScreen() {
   const router = useRouter();
-  // const { user } = useAuth(); // Not needed yet
 
-  const titleFont = Math.round(SCREEN_W * 0.075); // lớn hơn tí
+  const titleFont = Math.round(SCREEN_W * 0.075);
   const buttonWidth = Math.min(320, Math.round(SCREEN_W * 0.7));
 
   return (
@@ -32,7 +30,6 @@ const WelcomeScreen = () => {
         style={styles.bg}
         imageStyle={styles.bgImage}
       >
-        {/* Overlay mờ đẹp bằng LinearGradient */}
         <LinearGradient
           pointerEvents="none"
           colors={["rgba(0,0,0,0.5)", "rgba(0,0,0,0.25)", "rgba(0,0,0,0.6)"]}
@@ -52,7 +49,7 @@ const WelcomeScreen = () => {
               mode="contained"
               buttonColor="#e91e63"
               textColor="#fff"
-              onPress={() => router.push("/login")}
+              onPress={() => router.push("/(auth)/login")}
               contentStyle={{ height: 50 }}
               style={[styles.btn, { width: buttonWidth }]}
             >
@@ -62,7 +59,7 @@ const WelcomeScreen = () => {
             <Button
               mode="outlined"
               textColor="#fff"
-              onPress={() => router.push("/register")}
+              onPress={() => router.push("/(auth)/register")}
               contentStyle={{ height: 50 }}
               style={[styles.btnOutlined, { width: buttonWidth }]}
             >
@@ -73,7 +70,7 @@ const WelcomeScreen = () => {
       </ImageBackground>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -128,5 +125,3 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
 });
-
-export default WelcomeScreen;

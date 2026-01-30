@@ -10,14 +10,16 @@ import {
   ImageBackground,
   Dimensions,
 } from "react-native";
+import { useRouter } from "expo-router";
 import api from "../api/axiosInstance";
 
-export default function HomeScreen({ navigation }) {
+export default function HomeScreen() {
   const [cards, setCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [windowWidth, setWindowWidth] = useState(
     Dimensions.get("window").width
   );
+  const router = useRouter();
   const CARD_WIDTH = windowWidth * 0.42;
   const CARD_HEIGHT = CARD_WIDTH * 1.6; // TỈ LỆ VÀNG
 
@@ -64,7 +66,7 @@ export default function HomeScreen({ navigation }) {
                   styles.card,
                   { width: CARD_WIDTH, height: CARD_HEIGHT },
                 ]}
-                onPress={() => navigation.navigate("CardDetail", { card })}
+                onPress={() => router.push(`/card/${card._id}`)}
               >
                 <Image
                   source={{ uri: card.imageUrl }}

@@ -1,0 +1,32 @@
+{
+  "extends": ["expo", "expo/web"],
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2021": true,
+    "react-native/react-native": true
+  },
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "paths": ["src"],
+        "extensions": [".js", ".jsx", ".ts", ".tsx", ".json"]
+      },
+      "typescript": {
+        "alwaysTryTypes": true,
+        "project": "./tsconfig.json"
+      }
+    }
+  },
+  "rules": {
+    "import/no-unresolved": [
+      "error",
+      {
+        "ignore": ["@/"]
+      }
+    ],
+    "react-native/no-unused-styles": 1,
+    "react-native/no-inline-styles": 0,
+    "react-native/no-raw-text": 0
+  }
+}
