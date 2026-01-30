@@ -7,6 +7,7 @@ import userCardRoutes from "./routes/userCards.js";
 import uploadRoutes from "./routes/upload.js";
 import quizRoutes from "./routes/quiz.js";
 import otpRoutes from "./routes/otp.js";
+import mongoose from "mongoose";
 
 const app = express();
 
@@ -51,12 +52,24 @@ app.options("*", cors());
 app.use(express.json());
 /* ========================================== */
 
-// HEALTH CHECK
 app.get("/api/health", (req, res) => {
+  const mongoState = mongoose.connection.readyState;
+  // 0 = disconnected
+  // 1 = connected
+  // 2 = connecting
+  // 3 = disconnecting
+
   res.status(200).json({
     status: "ok",
     message: "Server is running 🚀",
     time: new Date().toISOString(),
+
+    mongo: {
+      readyState: mongoState,
+      connected: mongoState === 1,
+      dbName: mongoose.connection.name || null,
+      host: mongoose.connection.host || null,
+    },
   });
 });
 
