@@ -45,7 +45,7 @@ export default function QRScannerScreen() {
 
     setLoading(true);
     try {
-      const res = await api.post("/cards/scan", { code: value });
+      const res = await api.post("/users/scan", { code: value });
 
       Toast.show({
         type: "success",
