@@ -8,14 +8,7 @@ import QRScannerAddScreen from '../src/screens/QRScannerAddScreen';
  */
 export default function QRScannerRoute() {
   return (
-    <View style={styles.container}>
       <QRScannerAddScreen />
-    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});

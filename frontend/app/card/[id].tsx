@@ -1,93 +1,254 @@
-import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
-import api from '../../src/api/axiosInstance';
-import CardDetailScreen from '../../src/screens/CardDetailScreen';
+import React, { useEffect, useState, useRef } from "react";
+import {
+  View,
+  Text,
+  Image,
+  TouchableOpacity,
+  ScrollView,
+  ActivityIndicator,
+  Modal,
+  Share,
+  StyleSheet,
+  SafeAreaView,
+  Dimensions,
+  Platform,
+} from "react-native";
+import { useLocalSearchParams, router } from "expo-router";
+import { useAuth } from "../../src/auth/AuthContext";
+import api from "../../src/api/axiosInstance";
+import Toast from "react-native-toast-message";
+import * as Speech from "expo-speech";
+import { Audio } from "expo-av";
+import QRCodeSVG from "react-native-qrcode-svg";
+import {
+  MaterialCommunityIcons,
+  Feather,
+  AntDesign,
+} from "@expo/vector-icons";
 
-/**
- * Dynamic Card Detail Screen Route
- * Accessed via /card/[id]
- * 
- * This route:
- * 1. Extracts the card ID from the URL
- * 2. Fetches the full card data from the API
- * 3. Passes it to CardDetailScreen as a route param
- */
-export default function CardDetailRoute() {
-  const { id } = useLocalSearchParams();
-  const [card, setCard] = useState(null);
+const rarityLabels: Record<string, string> = {
+  common: "Thường",
+  rare: "Hiếm",
+  epic: "Sử Thi",
+  legendary: "Huyền Thoại",
+};
+
+const BREAKPOINT = 700;
+
+export default function CardDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { user } = useAuth();
+
+  const [card, setCard] = useState<any>(null);
+  const [quiz, setQuiz] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [qrVisible, setQrVisible] = useState(false);
 
+  const [soundObj, setSoundObj] = useState<Audio.Sound | null>(null);
+  const [playingQuizId, setPlayingQuizId] = useState<string | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+
+  const qrRef = useRef<any>(null);
+  const [windowWidth, setWindowWidth] = useState(
+    Dimensions.get("window").width
+  );
+
+  /* ---------------- window resize ---------------- */
   useEffect(() => {
-    if (!id) {
-      setError('No card ID provided');
-      setLoading(false);
-      return;
-    }
+    const sub = Dimensions.addEventListener?.("change", ({ window }) =>
+      setWindowWidth(window.width)
+    );
+    return () => sub?.remove?.();
+  }, []);
 
-    const fetchCard = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get(`/cards/${id}`);
-        setCard(response.data);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching card:', err);
-        setError('Failed to load card details');
-        setCard(null);
-      } finally {
-        setLoading(false);
-      }
+  /* ---------------- load card + quiz ---------------- */
+  useEffect(() => {
+    if (!id) return;
+
+    let mounted = true;
+
+    Promise.all([
+      api.get(`/cards/${id}`),
+      api.get(`/quizzes/all/${id}`),
+    ])
+      .then(([cardRes, quizRes]) => {
+        if (!mounted) return;
+        setCard(cardRes.data);
+        setQuiz(Array.isArray(quizRes.data) ? quizRes.data : []);
+      })
+      .catch(() => {
+        Toast.show({
+          type: "error",
+          text1: "Không tải được dữ liệu thẻ",
+        });
+      })
+      .finally(() => mounted && setLoading(false));
+
+    return () => {
+      mounted = false;
     };
-
-    fetchCard();
   }, [id]);
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" />
-        </View>
-      </View>
-    );
-  }
+  /* ---------------- audio cleanup ---------------- */
+  useEffect(() => {
+    return () => {
+      if (soundObj) {
+        soundObj.stopAsync().catch(() => {});
+        soundObj.unloadAsync().catch(() => {});
+      }
+      Speech.stop();
+    };
+  }, [soundObj]);
 
-  if (error || !card) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.centered}>
-          <Text style={styles.errorText}>{error || 'Card not found'}</Text>
-        </View>
-      </View>
-    );
-  }
+  const playVoice = async (q: any) => {
+    try {
+      if (playingQuizId === q._id && soundObj) {
+        if (isPaused) {
+          await soundObj.playAsync();
+          setIsPaused(false);
+        } else {
+          await soundObj.pauseAsync();
+          setIsPaused(true);
+        }
+        return;
+      }
 
-  // Create a mock route object that CardDetailScreen expects
-  const mockRoute = {
-    params: { card },
+      if (soundObj) {
+        await soundObj.stopAsync();
+        await soundObj.unloadAsync();
+      }
+
+      if (q.voiceUri) {
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: q.voiceUri },
+          { shouldPlay: true }
+        );
+        setSoundObj(sound);
+        setPlayingQuizId(q._id);
+        setIsPaused(false);
+
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (status.didJustFinish) {
+            sound.unloadAsync();
+            setSoundObj(null);
+            setPlayingQuizId(null);
+          }
+        });
+      } else {
+        Speech.speak(`${q.question}. ${q.explanation || ""}`, {
+          language: "vi-VN",
+        });
+      }
+    } catch {}
   };
 
+  const handleAdd = () => {
+    router.push("/add-by-code");
+  };
+
+  const handleShare = async () => {
+    await Share.share({
+      message: `${card.title}\nhttps://your-site.example.com/card/${id}`,
+    });
+  };
+
+  if (loading || !card) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  const isWide = windowWidth >= BREAKPOINT;
+
   return (
-    <View style={styles.container}>
-      <CardDetailScreen route={mockRoute} navigation={null} />
-    </View>
+    <SafeAreaView style={styles.safe}>
+      {/* HEADER */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => router.back()}>
+          <Feather name="arrow-left" size={20} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Chi tiết thẻ</Text>
+        <View style={{ width: 24 }} />
+      </View>
+
+      <ScrollView contentContainerStyle={{ padding: 16 }}>
+        <Image source={{ uri: card.imageUrl }} style={styles.image} />
+
+        <Text style={styles.title}>{card.title}</Text>
+        <Text style={styles.badge}>
+          {rarityLabels[card.rarity?.toLowerCase()] || "N/A"}
+        </Text>
+
+        <Text style={styles.desc}>{card.description}</Text>
+
+        {/* QUIZ */}
+        {quiz.map((q) => (
+          <View key={q._id} style={styles.quizCard}>
+            <Text style={styles.quizQ}>{q.question}</Text>
+
+            <TouchableOpacity onPress={() => playVoice(q)}>
+              <Text style={styles.playBtn}>
+                {playingQuizId === q._id
+                  ? isPaused
+                    ? "▶️ Tiếp tục"
+                    : "⏸ Tạm dừng"
+                  : "🔊 Nghe giọng đọc"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+
+        {/* FOOTER */}
+        <TouchableOpacity style={styles.primaryBtn} onPress={handleAdd}>
+          <Text style={styles.primaryBtnText}>➕ Thêm vào bộ sưu tập</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={handleShare} style={styles.outlineBtn}>
+          <Text>Chia sẻ</Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
+/* ---------------- styles ---------------- */
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  safe: { flex: 1, backgroundColor: "#f8fafc" },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    padding: 12,
+    backgroundColor: "#fff",
   },
-  centered: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  headerTitle: { fontWeight: "700" },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  image: { width: "100%", height: 420, borderRadius: 12 },
+  title: { fontSize: 22, fontWeight: "800", marginTop: 12 },
+  badge: { marginTop: 4, color: "#64748b" },
+  desc: { marginTop: 10, lineHeight: 20 },
+  quizCard: {
+    backgroundColor: "#fff",
+    padding: 12,
+    borderRadius: 10,
+    marginTop: 12,
   },
-  errorText: {
-    fontSize: 16,
-    color: '#ff6b6b',
+  quizQ: { fontWeight: "600" },
+  playBtn: { marginTop: 6, color: "#4f46e5" },
+  primaryBtn: {
+    backgroundColor: "#0d9488",
+    padding: 14,
+    borderRadius: 10,
+    marginTop: 16,
+    alignItems: "center",
+  },
+  primaryBtnText: { color: "#fff", fontWeight: "700" },
+  outlineBtn: {
+    marginTop: 10,
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: 10,
+    alignItems: "center",
   },
 });
-

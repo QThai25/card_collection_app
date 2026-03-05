@@ -20,6 +20,7 @@ import Toast from "react-native-toast-message";
 import * as Speech from "expo-speech";
 import { Audio } from "expo-av";
 import QRCodeSVG from "react-native-qrcode-svg";
+import { router } from "expo-router";
 import { MaterialCommunityIcons, Feather, AntDesign } from "@expo/vector-icons";
 
 /*
@@ -53,12 +54,12 @@ const CardDetailScreen = ({ route, navigation }) => {
   const [isPaused, setIsPaused] = useState(false); // pause / resume
 
   const [windowWidth, setWindowWidth] = useState(
-    Dimensions.get("window").width
+    Dimensions.get("window").width,
   );
 
   useEffect(() => {
     const sub = Dimensions.addEventListener?.("change", ({ window }) =>
-      setWindowWidth(window.width)
+      setWindowWidth(window.width),
     );
     return () => {
       if (sub?.remove) sub.remove();
@@ -123,7 +124,7 @@ const CardDetailScreen = ({ route, navigation }) => {
       if (item?.voiceUri) {
         const { sound } = await Audio.Sound.createAsync(
           { uri: item.voiceUri },
-          { shouldPlay: true }
+          { shouldPlay: true },
         );
 
         setSoundObj(sound);
@@ -168,12 +169,7 @@ const CardDetailScreen = ({ route, navigation }) => {
   }, [soundObj]);
 
   const handleAdd = () => {
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.navigate("AddByCode");
-    } else {
-      navigation.navigate("AddByCode");
-    }
+    router.push("/add-by-code");
   };
 
   const toggleFav = () => {

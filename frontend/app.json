@@ -33,6 +33,12 @@
     "plugins": [
       "expo-router",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Cho phép ứng dụng quét mã QR"
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
@@ -44,7 +50,6 @@
           }
         }
       ],
-      "expo-barcode-scanner",
       "expo-web-browser"
     ],
 
