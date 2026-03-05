@@ -36,7 +36,7 @@ export default function AddByCodeScreen() {
 
     setLoading(true);
     try {
-      const res = await api.post("/cards/scan", { code: trimmed });
+      const res = await api.post("/users/scan", { code: trimmed });
       Toast.show({ type: "success", text1: res.data?.message || "Đã thêm thẻ vào bộ sưu tập" });
 
       const card = res.data?.card;
