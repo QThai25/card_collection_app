@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 export const getUserCards = async (req, res) => {
   try {
     const userCards = await UserCard.find({ userId: req.params.id }).populate(
-      "cardId"
+      "cardId",
     );
     res.json(userCards);
   } catch (err) {
@@ -57,7 +57,13 @@ export const scanCard = async (req, res) => {
       card = await Card.findById(cardId);
     }
     if (!card && code) {
-      card = await Card.findOne({ code });
+      // nếu code là ObjectId -> tìm bằng _id
+      if (mongoose.Types.ObjectId.isValid(code)) {
+        card = await Card.findById(code);
+      } else {
+        // nếu không phải ObjectId -> tìm bằng code field
+        card = await Card.findOne({ code });
+      }
     }
 
     if (!card) {
@@ -109,4 +115,3 @@ export const scanCard = async (req, res) => {
     });
   }
 };
-

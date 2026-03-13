@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, Platform } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  Platform,
+} from "react-native";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { useRouter } from "expo-router";
 import Toast from "react-native-toast-message";
@@ -24,7 +30,7 @@ export default function QRScannerScreen() {
     const scanner = new Html5QrcodeScanner(
       "qr-reader",
       { fps: 10, qrbox: 250 },
-      false
+      false,
     );
 
     scanner.render(
@@ -32,7 +38,7 @@ export default function QRScannerScreen() {
         scanner.clear();
         handleScan(text);
       },
-      () => {}
+      () => {},
     );
 
     return () => {
@@ -44,21 +50,32 @@ export default function QRScannerScreen() {
     if (!value || loading) return;
 
     setLoading(true);
+
     try {
       const res = await api.post("/users/scan", { code: value });
 
+      console.log("SCAN RESPONSE:", res.data);
+
+      if (!res.data.success) {
+        Toast.show({
+          type: "error",
+          text1: res.data.message || "Scan thất bại",
+        });
+        return;
+      }
+
       Toast.show({
         type: "success",
-        text1: "Đã thêm thẻ",
+        text1: res.data.message || "Đã thêm thẻ",
       });
 
-      const cardId = res?.data?.card?._id;
+      const cardId = res.data.card?._id;
+
       if (cardId) {
         router.replace(`/card/${cardId}`);
-      } else {
-        router.back();
       }
     } catch (e) {
+      console.log("SCAN ERROR:", e);
       Toast.show({
         type: "error",
         text1: "QR không hợp lệ",
@@ -67,7 +84,6 @@ export default function QRScannerScreen() {
       setLoading(false);
     }
   };
-
   // ===== MOBILE CAMERA =====
   if (Platform.OS !== "web") {
     if (!permission) return null;
@@ -75,9 +91,7 @@ export default function QRScannerScreen() {
     if (!permission.granted) {
       return (
         <View style={styles.center}>
-          <Text onPress={requestPermission}>
-            Cấp quyền camera
-          </Text>
+          <Text onPress={requestPermission}>Cấp quyền camera</Text>
         </View>
       );
     }
